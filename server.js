@@ -16,10 +16,26 @@ const config = {
 app.use(auth(config));
 
 // req.isAuthenticated is provided from the auth router
-app.get('/hmm', (req, res) => {
-  res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out');
-  console.log(req.oidc.user)
+app.get('/', (req, res) => {
+  console.log('ASDLUHASJDHDLAS')
+  if (req.oidc.isAuthenticated()) {
+    console.log(req.oidc.user); 
+    res.redirect('/TriviaHome');
+  } else {
+    res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+  }
 });
+
+//TriviaHome Route
+app.get('/TriviaHome', (req, res) => {
+  console.log('MEOW')
+  if (!req.oidc.isAuthenticated()) {
+    res.redirect('/'); // Redirects to the home page if not authenticated
+  } else {
+    res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+  }
+});
+
 
 // Serve static files from the Vue frontend app
 app.use(express.static(path.join(__dirname, 'client/dist')));
@@ -27,8 +43,16 @@ app.use(express.static(path.join(__dirname, 'client/dist')));
 // Serve your API routes here
 
 // All other requests will be sent to your frontend app
+//Need to keep this request last
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+});
+
+
+
+//Authentication Route
+app.get('/api/auth-status', (req, res) => {
+  res.json({ isAuthenticated: req.oidc.isAuthenticated() });
 });
 
 

@@ -9,7 +9,7 @@
             <p class="text-h3">test and level up with TrivAI.</p>
             <p class="text-subtitle-1">Challenge your friends or play against AI opponents in trivia battles that will push your knowledge to new heights. With TrivAI, the next level of trivia competition is just a tap away.</p>
             <v-row class="action-buttons d-flex align-center justify-center">
-                <v-col cols="auto"> <v-btn color="proceed"> Create Account / Login </v-btn> </v-col>
+                <v-col cols="auto"> <v-btn href="/login" color="proceed"> Create Account / Login </v-btn> </v-col>
                 <v-col cols="auto">
                     <v-btn color="info"> More Information </v-btn>
                 </v-col>
