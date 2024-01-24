@@ -4,12 +4,24 @@ const path = require('path');
 require('dotenv').config();
 const app = express();
 const { auth } = require('express-openid-connect');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = "mongodb+srv://rchari1:"+ process.env.mongoDBSecret +"@trivia-game-db.h56cz4h.mongodb.net/?retryWrites=true&w=majority";
 
+//db client setup
+const client = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  }
+});
 
-
+//openai configuration
 const openai = new OpenAI({
   apiKey: process.env.openAI_secret,
 });
+
+//user auth configuration
 const config = {
   authRequired: false,
   auth0Logout: true,
@@ -32,12 +44,12 @@ app.get('/', (req, res) => {
 });
 
 //TriviaHome Route
-app.get('/TriviaHome', (req, res) => {
-  console.log('MEOW')
+app.get('/TriviaHome', async (req, res) => {
   if (!req.oidc.isAuthenticated()) {
     res.redirect('/'); // Redirects to the home page if not authenticated
   } else {
     res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+
   }
 });
 
@@ -80,3 +92,17 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+
+/*
+connect to mongodb
+try {
+  // Connect the client to the server	(optional starting in v4.7)
+  await client.connect();
+  // Send a ping to confirm a successful connection
+  await client.db("admin").command({ ping: 1 });
+  console.log("Pinged your deployment. You successfully connected to MongoDB!");
+} finally {
+  // Ensures that the client will close when you finish/error
+  await client.close();
+}*/
