@@ -70,14 +70,22 @@ app.get('/TriviaHome', async (req, res) => {
 app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // Serve your API routes here
+//QuickPlay Question Getter Route
+app.get('/api/quickplay/start', async (req, res) => {
+  let difficulty = req.query.difficulty
+  const allRecords = await TriviaQuestion.find({ difficulty: difficulty }).exec();
 
-// All other requests will be sent to your frontend app
-//Need to keep this request last
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+    // Shuffle the array (Fisher-Yates shuffle algorithm)
+    for (let i = allRecords.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allRecords[i], allRecords[j]] = [allRecords[j], allRecords[i]];
+    }
+
+    let numOfRecordsToFetch = 20; // Set the number of random records you want
+    let randomRecords = allRecords.slice(0, numOfRecordsToFetch);
+
+    res.json(randomRecords);
 });
-
-
 
 //Authentication Route
 app.get('/api/auth-status', (req, res) => {
@@ -112,8 +120,7 @@ app.post('/api/quickplay/start', async (req, res) => {
       // Create a new TriviaQuestion and save it
       const newQuestion = new TriviaQuestion(questionObject);
       await newQuestion.save();
-      console.log("Message saved successfully")
-      res.redirect(`/QuickPlay/${questionObject.difficulty}`)
+      res.json(questionObject)
     }
 
     console.log('Question Object',questionObject);
@@ -124,6 +131,12 @@ app.post('/api/quickplay/start', async (req, res) => {
     console.log(error)
     res.status(500).json({ error: "error" });
   }
+});
+
+// All other requests will be sent to your frontend app
+//KEEP THIS LAST
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
 });
 
 
@@ -151,8 +164,8 @@ const generatePrompt = (difficulty) => {
     default:
       topicDescription = 'Generate a general knowledge trivia question that is interesting and accessible to a broad audience. The question should not require specialized knowledge and should be suitable for various ages and educational backgrounds.';
   }
-  return `Generate a unique trivia question focusing on the following themes: superheroes. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
-  //return `Generate a unique trivia question focusing on one of the following themes: obscure historical events, lesser-known scientific discoveries, unusual cultural practices around the world, niche aspects of sports, hidden gems in the entertainment industry, or intriguing geography facts. Please do a good job of choosing a random one of these topics as it is of utmost importance that if I want more questions, I get a an equal chance of getting a different subject. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
+  //return `Generate a unique trivia question focusing on the following themes: culture. This could include traditions from different areas or rituals or food or music or attire. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
+  return `Generate a unique trivia question focusing on one of the following themes: obscure historical events, lesser-known scientific discoveries, unusual cultural practices around the world, niche aspects of sports, hidden gems in the entertainment industry, or intriguing geography facts. Please do a good job of choosing a random one of these topics as it is of utmost importance that if I want more questions, I get a an equal chance of getting a different subject. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
 }
 
 

@@ -24,7 +24,6 @@
 
 <script>
 import { ref } from 'vue';
-import axios from 'axios'
 export default {
     name: 'TriviaHome',
     setup() {
@@ -33,14 +32,8 @@ export default {
         const startGame = async () => {
             if (!selectedDifficulty.value) return;
 
-            try {
-                // Post the difficulty level to your backend
-                await axios.post('/api/quickplay/start', { difficulty: selectedDifficulty.value });
-                // Redirect handled by backend, or manually redirect here if needed
-                // window.location.href = '/QuickPlay';
-            } catch (error) {
-                console.error('Error starting game:', error);
-            }
+            window.location.href = `/QuickPlay/${selectedDifficulty.value}`;
+
         };
 
         return {
