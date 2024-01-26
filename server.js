@@ -99,7 +99,7 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     let subject = req.body.subject;
     let prompt = generatePrompt(difficulty, subject);
     const completion = await openai.chat.completions.create({
-      messages: [{ role: "system", content: prompt }],
+      messages: [{ role: "system", content: prompt + "If there is any excess text in the data, can you clean it out so that i will be able to use the JSON.parse javascript function on it" }],
       model: "gpt-3.5-turbo-1106",
     });
 
@@ -129,9 +129,6 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     }else{
       res.status(500).json({error: "error parsing json"})
     }
-    
-
-
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: "error" });
