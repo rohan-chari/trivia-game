@@ -106,25 +106,31 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     let questionsArray = JSON.parse(completion.choices[0].message.content);
     let savedQuestions = [];
 
-    for (const questionData of questionsArray) {
-      let questionObject = {
-        question: questionData.question,
-        choices: questionData.choices,
-        answer: questionData.answer,
-        subject: questionData.subject || subject,
-        difficulty: difficulty
-      };
-
-      const existingQuestion = await TriviaQuestion.findOne({ subject: questionObject.subject, answer: questionObject.answer });
-
-      if (!existingQuestion) {
-        const newQuestion = new TriviaQuestion(questionObject);
-        await newQuestion.save();
-        savedQuestions.push(newQuestion);
+    console.log('QUESTIONSARRAY',questionsArray)
+    if (Array.isArray(questionsArray) && questionsArray.length > 0) {
+      for (const questionData of questionsArray) {
+        let questionObject = {
+          question: questionData.question,
+          choices: questionData.choices,
+          answer: questionData.answer,
+          subject: questionData.subject || subject,
+          difficulty: difficulty
+        };
+  
+        const existingQuestion = await TriviaQuestion.findOne({ subject: questionObject.subject, answer: questionObject.answer });
+  
+        if (!existingQuestion) {
+          const newQuestion = new TriviaQuestion(questionObject);
+          await newQuestion.save();
+          savedQuestions.push(newQuestion);
+        }
       }
+      res.json(savedQuestions);
+    }else{
+      res.status(500).json({error: "error parsing json"})
     }
+    
 
-    res.json(savedQuestions);
 
   } catch (error) {
     console.log(error)
@@ -138,9 +144,7 @@ app.get('/api/HeadToHead/start', async (req, res) => {
     let difficulty = req.query.difficulty;
     let subject = req.query.subject;
     let filter = req.query.filter
-    console.log('filter',filter)
     if (filter === 'false') {
-      console.log('look for me')
       const allRecords = await TriviaQuestion.find({
         difficulty: { $regex: new RegExp(difficulty, 'i') },
         subject: { $regex: new RegExp(subject, 'i') }
@@ -220,7 +224,7 @@ const generatePrompt = (difficulty, subject) => {
     default:
       topicDescription = 'Generate a general knowledge trivia question that is interesting and accessible to a broad audience. The question should not require specialized knowledge and should be suitable for various ages and educational backgrounds.';
   }
-  return `Generate 25 unique trivia questions focusing on the following themes: ${subject}. I want you to get more specific into this topic depending on the age group. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. For the difficulty level in each question, please make sure to set it as ${difficulty}. Please do not include any additional text or information outside of this JSON structure.`
+  return `Generate 25 unique trivia questions focusing on the following themes: ${subject}. I want you to get more specific into this topic depending on the age group. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as an array of JSON objects, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. For the difficulty level in each question, please make sure to set it as ${difficulty}. Please do not include any additional text or information outside of this JSON structure.`
   //return `Generate a unique trivia question focusing on one of the following themes: obscure historical events, lesser-known scientific discoveries, unusual cultural practices around the world, niche aspects of sports, hidden gems in the entertainment industry, or intriguing geography facts. Please do a good job of choosing a random one of these topics as it is of utmost importance that if I want more questions, I get a an equal chance of getting a different subject. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
 }
 
