@@ -92,46 +92,102 @@ app.get('/api/auth-status', (req, res) => {
   res.json({ isAuthenticated: req.oidc.isAuthenticated() });
 });
 
-//QUICKPLAY Question Generator Route
-app.post('/api/quickplay/start', async (req, res) => {
+//HEAD TO HEAD Question Generator Route
+app.post('/api/HeadToHead/start', async (req, res) => {
   try {
-    let difficulty = req.body.difficulty
-    let prompt = generatePrompt(difficulty);
+    let difficulty = req.body.difficulty;
+    let subject = req.body.subject;
+    let prompt = generatePrompt(difficulty, subject);
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt }],
       model: "gpt-3.5-turbo-1106",
     });
-    
-    let jsonData = JSON.parse(completion.choices[0].message.content);
 
-    let questionObject = {
-      question: jsonData.question , // Extract from completion
-      choices: jsonData.choices, // Extract and format from completion
-      answer: jsonData.answer, // Extract from completion
-      subject: jsonData.subject, // Extract or define based on difficulty
-      difficulty: difficulty
-    };
+    let questionsArray = JSON.parse(completion.choices[0].message.content);
+    let savedQuestions = [];
 
-    const existingQuestion = await TriviaQuestion.findOne({ question: questionObject.question, difficulty:questionObject.difficulty });
-    
-    if (existingQuestion) {
-      res.json({ message: "Question already exists" });
-    } else {
-      // Create a new TriviaQuestion and save it
-      const newQuestion = new TriviaQuestion(questionObject);
-      await newQuestion.save();
-      res.json(questionObject)
+    for (const questionData of questionsArray) {
+      let questionObject = {
+        question: questionData.question,
+        choices: questionData.choices,
+        answer: questionData.answer,
+        subject: questionData.subject || subject,
+        difficulty: difficulty
+      };
+
+      const existingQuestion = await TriviaQuestion.findOne({ subject: questionObject.subject, answer: questionObject.answer });
+
+      if (!existingQuestion) {
+        const newQuestion = new TriviaQuestion(questionObject);
+        await newQuestion.save();
+        savedQuestions.push(newQuestion);
+      }
     }
 
-    console.log('Question Object',questionObject);
-
-    //res.json(completion.choices[0]);
+    res.json(savedQuestions);
 
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: "error" });
   }
 });
+
+//GET for Head To Head if Subject already exists
+app.get('/api/HeadToHead/start', async (req, res) => {
+  try {
+    let difficulty = req.query.difficulty;
+    let subject = req.query.subject;
+    let filter = req.query.filter
+    console.log('filter',filter)
+    if (filter === 'false') {
+      console.log('look for me')
+      const allRecords = await TriviaQuestion.find({
+        difficulty: { $regex: new RegExp(difficulty, 'i') },
+        subject: { $regex: new RegExp(subject, 'i') }
+      }).exec();
+      
+      for (let i = allRecords.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allRecords[i], allRecords[j]] = [allRecords[j], allRecords[i]];
+      }
+  
+      let numOfRecordsToFetch = allRecords.length; // Set the number of random records you want
+      let randomRecords = allRecords.slice(0, numOfRecordsToFetch);
+      res.json(randomRecords);
+    } else if(filter === 'true') {
+      const allRecords = await TriviaQuestion.find({
+        difficulty: { $regex: new RegExp(difficulty, 'i') },
+        subject: { $regex: new RegExp(subject, 'i') }
+      }).exec();
+      
+      for (let i = allRecords.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allRecords[i], allRecords[j]] = [allRecords[j], allRecords[i]];
+      }
+  
+      let numOfRecordsToFetch = 20; // Set the number of random records you want
+      let randomRecords = allRecords.slice(0, numOfRecordsToFetch);
+      res.json(randomRecords);
+    }
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: "error" });
+  }
+});
+
+
+
+//Head to Head Game Mode Select Autocomplete Route
+app.get('/api/subject/autocomplete', async (req, res) => {
+  TriviaQuestion.find().select('subject -_id').then(results => {
+    const subjects = results.map(doc => doc.subject.trim().toLowerCase());
+    const uniqueSubjects = [...new Set(subjects)]; // Remove duplicates
+    res.json(uniqueSubjects);
+  }).catch(err => {
+      res.status(500).send('Error occurred: ' + err.message);
+  });
+})
+
 
 // All other requests will be sent to your frontend app
 //KEEP THIS LAST
@@ -146,7 +202,7 @@ app.listen(port, () => {
 });
 
 
-const generatePrompt = (difficulty) => {
+const generatePrompt = (difficulty, subject) => {
   let topicDescription; // Customize this based on the difficulty
   switch (difficulty) {
     case 'Elementary School':
@@ -164,8 +220,8 @@ const generatePrompt = (difficulty) => {
     default:
       topicDescription = 'Generate a general knowledge trivia question that is interesting and accessible to a broad audience. The question should not require specialized knowledge and should be suitable for various ages and educational backgrounds.';
   }
-  //return `Generate a unique trivia question focusing on the following themes: culture. This could include traditions from different areas or rituals or food or music or attire. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
-  return `Generate a unique trivia question focusing on one of the following themes: obscure historical events, lesser-known scientific discoveries, unusual cultural practices around the world, niche aspects of sports, hidden gems in the entertainment industry, or intriguing geography facts. Please do a good job of choosing a random one of these topics as it is of utmost importance that if I want more questions, I get a an equal chance of getting a different subject. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
+  return `Generate 25 unique trivia questions focusing on the following themes: ${subject}. I want you to get more specific into this topic depending on the age group. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. For the difficulty level in each question, please make sure to set it as ${difficulty}. Please do not include any additional text or information outside of this JSON structure.`
+  //return `Generate a unique trivia question focusing on one of the following themes: obscure historical events, lesser-known scientific discoveries, unusual cultural practices around the world, niche aspects of sports, hidden gems in the entertainment industry, or intriguing geography facts. Please do a good job of choosing a random one of these topics as it is of utmost importance that if I want more questions, I get a an equal chance of getting a different subject. Each question should explore specific details, revealing fascinating and lesser-known information within these themes. Ensure the questions are captivating, thought-provoking, and uncommon in standard trivia collections. Aim to challenge trivia enthusiasts with novel and surprising topics, avoiding repetition and well-known trivia subjects. Creatively expand on these themes to offer a rich variety of questions. ${topicDescription}.  Format the response as a JSON object, strictly adhering to the following structure: {"question": "<question_text>", "choices": ["<choice1>", "<choice2>", "<choice3>", "<choice4>"], "answer": "<correct_answer>", "subject": "<selected_topic>", "difficulty": "${difficulty}"}. Please do not include any additional text or information outside of this JSON structure.`
 }
 
 
