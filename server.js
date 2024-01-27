@@ -100,7 +100,7 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     let prompt = generatePrompt(difficulty, subject);
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt + "If there is any excess text in the data, can you clean it out so that i will be able to use the JSON.parse javascript function on it" }],
-      model: "gpt-3.5-turbo-1106",
+      model: "gpt-4"
     });
 
     let questionsArray = JSON.parse(completion.choices[0].message.content);
@@ -166,7 +166,7 @@ app.get('/api/HeadToHead/start', async (req, res) => {
         [allRecords[i], allRecords[j]] = [allRecords[j], allRecords[i]];
       }
   
-      let numOfRecordsToFetch = 20; // Set the number of random records you want
+      let numOfRecordsToFetch = 10; // Set the number of random records you want
       let randomRecords = allRecords.slice(0, numOfRecordsToFetch);
       res.json(randomRecords);
     }

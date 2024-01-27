@@ -22,7 +22,10 @@ export default {
   text-align: center;
   color: #2c3e50;
 }
-body {
-  background-color: #8BA7FF; 
+body{
+  background: rgb(255,255,255);
+  background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(201,246,255,1) 47%, rgba(201,246,255,1) 89%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 </style>

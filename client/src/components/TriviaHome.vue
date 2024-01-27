@@ -74,9 +74,8 @@ export default {
                 }
             });
             console.log(response.data.length)
-            //if there are less than 75 questions, we will create 25
-            if (response.data.length < 75) {
-                console.log('POSTING BC NOT ENOUGH QUESTIONS')
+            //if there are less than 25 questions, we will create 10
+            if (response.data.length < 30) {
                 await axios.post('/api/HeadToHead/start', {
                     difficulty: selectedDifficulty.value,
                     subject: selectedSubject.value

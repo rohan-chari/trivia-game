@@ -8,7 +8,7 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
 const customDarkTheme = {
-  dark: true,
+  dark: false,
   colors: {
     background: "#A366EC",
     surface: "#15202b",
