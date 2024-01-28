@@ -25,12 +25,12 @@
                 <v-btn color="success" v-bind="props">Head To Head</v-btn>
             </template>
             <template v-slot:default="{ isActive }">
-                <v-card width="500">
+                <v-card color="light" width="500">
                     <v-toolbar color="primary" title="Head To Head Settings"></v-toolbar>
                     <v-card-text>
                         <v-select label="Choose your difficulty" :items="['Elementary School', 'High School', 'College', 'Genius']" v-model="selectedDifficulty">
                         </v-select>
-                        <v-combobox creatable="true" v-model="selectedSubject" label="Choose your subject" :items="subjectDropdown"></v-combobox>
+                        <v-combobox  creatable="true" v-model="selectedSubject" label="Choose your subject" :items="subjectDropdown"></v-combobox>
                     </v-card-text>
                     <v-card-actions class="justify-end">
                         <v-btn variant="text" @click="isActive.value = false, selectedDifficulty = '', selectedSubject=''">Cancel</v-btn>
