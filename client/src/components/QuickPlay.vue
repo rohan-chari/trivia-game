@@ -1,16 +1,17 @@
 <template>
 <div>
     <h1>QuickPlay.vue</h1>
+    <CountdownTimer ref="countdownTimerRef" @timer-expire="nextQuestionTimeExpiry" />
     <div v-if="allTriviaQuestions && allTriviaQuestions.length > 0">
         <p class="text-h3">{{ currentQuestion.question }}</p>
         <v-row justify="center">
             <v-col cols="12" lg="3" md="3" xl="3" sm="12" v-for="(answer, index) in currentQuestion.choices.slice(0, 2)" :key="index">
-                <v-btn color="proceed" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
+                <v-btn :color="getButtonColors(answer)" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
             </v-col>
         </v-row>
         <v-row justify="center">
             <v-col cols="12" lg="3" md="3" xl="3" sm="12" v-for="(answer, index) in currentQuestion.choices.slice(2, 4)" :key="index + 2">
-                <v-btn color="proceed" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
+                <v-btn :color="getButtonColors(answer)" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
             </v-col>
         </v-row>
     </div>
@@ -24,8 +25,12 @@
 import {onMounted,ref} from 'vue';
 import axios from 'axios';
 import {useRoute} from 'vue-router';
+import CountdownTimer from './CountdownTimer.vue';
 
 export default {
+    components: {
+        CountdownTimer
+    },
     name: 'QuickPlay',
     setup() {
         const route = useRoute();
@@ -33,7 +38,20 @@ export default {
         const allTriviaQuestions = ref([]);
         const currentQuestionIndex = ref(0);
 
+        const userInfo = ref(null);
+
         const currentQuestion = ref({});
+
+        const countdownTimerRef = ref(null);
+
+        const answerSelected = ref(false);
+
+
+        const callResetTimer = () => {
+            if (countdownTimerRef.value) {
+                countdownTimerRef.value.resetTimer();
+            }
+        };
 
         const fetchTriviaQuestion = async () => {
             try {
@@ -51,27 +69,63 @@ export default {
 
         const selectAnswer = (answer) => {
             // Logic to check if the answer is correct
+            answerSelected.value = true;
+
             if (answer == currentQuestion.value.answer) {
                 console.log('you got the answer correct!')
             }
-            // Move to next question
+        };
+
+        const nextQuestionTimeExpiry = () => {
             if (currentQuestionIndex.value < allTriviaQuestions.value.length - 1) {
+                callResetTimer();
                 currentQuestionIndex.value++;
                 currentQuestion.value = allTriviaQuestions.value[currentQuestionIndex.value];
+                answerSelected.value = false;
             } else {
                 // Logic for when all questions have been answered
+                alert("All Questions Answered")
             }
         };
 
+        const getButtonColors = (answer) => {
+            if(answerSelected.value == false){
+                return 'proceed'
+            }
+            if (answer === currentQuestion.value.answer && answerSelected.value == true) {
+                // Correct answer
+                return 'green';
+            }else{
+                return 'red'
+            }
+        }
+
         onMounted(async () => {
             await fetchTriviaQuestion();
+
+            try {
+                //redirect if not authenticated
+                const response = await axios.get('/api/auth-status');
+                if(!response.data.userId){
+                    window.location.href = `/`;
+                }else{
+                    userInfo.value = response.data
+                }
+            } catch (error) {
+                console.error('Error fetching user information:', error);
+            }
         });
 
         return {
             difficulty,
             currentQuestion,
             selectAnswer,
-            allTriviaQuestions
+            allTriviaQuestions,
+            userInfo,
+            countdownTimerRef,
+            CountdownTimer,
+            nextQuestionTimeExpiry,
+            getButtonColors
         };
     }
 };

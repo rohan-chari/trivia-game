@@ -1,6 +1,6 @@
 <template>
 <div>
-    <h1>TriviaHome.vue</h1>
+    <h1>Welcome, {{ userInfo.name }}</h1>
     <v-col class="game-select" cols="12" lg="3" md="3" xl="3" sm="12">
         <v-dialog transition="dialog-top-transition" width="auto">
             <template v-slot:activator="{ props }">
@@ -55,6 +55,8 @@ export default {
         const selectedDifficulty = ref('');
         const selectedSubject = ref('')
 
+        const userInfo = ref(null);
+
         const subjectDropdown = ref([])
 
         const startQuickPlay = async () => {
@@ -96,6 +98,18 @@ export default {
 
         onMounted(async () => {
             subjectDropdown.value = await getHeadToHeadSubjects();
+
+            try {
+                //redirect if not authenticated
+                const response = await axios.get('/api/auth-status');
+                if(!response.data.userId){
+                    window.location.href = `/`;
+                }else{
+                    userInfo.value = response.data
+                }
+            } catch (error) {
+                console.error('Error fetching user information:', error);
+            }
         });
 
         return {
@@ -103,7 +117,8 @@ export default {
             selectedSubject,
             startQuickPlay,
             startHeadToHead,
-            subjectDropdown
+            subjectDropdown,
+            userInfo
         };
     }
 };

@@ -13,6 +13,8 @@ mongoose.connect(uri)
 .then(() => console.log('MongoDB Connected'))
 .catch(err => console.log(err));
 const Schema = mongoose.Schema;
+
+//Trivia Question Schema
 const triviaQuestionSchema = new Schema({
   question: String,
   choices: [String],
@@ -21,6 +23,16 @@ const triviaQuestionSchema = new Schema({
   difficulty: String
 });
 const TriviaQuestion = mongoose.model('TriviaQuestion', triviaQuestionSchema);
+
+//User Schema
+const userInfoSchema = new Schema({
+  name: String,
+  email: String,
+  userId: String,
+  locale: String,
+});
+const UserInfo = mongoose.model('UserInfo', userInfoSchema);
+
 
 //bodyparser to read post requests
 app.use( bodyParser.json());       // to support JSON-encoded bodies
@@ -48,7 +60,6 @@ app.use(auth(config));
 // req.isAuthenticated is provided from the auth router
 app.get('/', (req, res) => {
   if (req.oidc.isAuthenticated()) {
-    console.log(req.oidc.user); 
     res.redirect('/TriviaHome');
   } else {
     res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
@@ -60,8 +71,17 @@ app.get('/TriviaHome', async (req, res) => {
   if (!req.oidc.isAuthenticated()) {
     res.redirect('/'); // Redirects to the home page if not authenticated
   } else {
+    const existingUser = await UserInfo.findOne({ userId: req.oidc.user.sub });
+    if(!existingUser){
+      const newUser = UserInfo({
+        name: req.oidc.user.name ? req.oidc.user.name : req.oidc.user.nickname,
+        email: req.oidc.user.email,
+        userId: req.oidc.user.sub,
+        locale: req.oidc.user.locale
+      })
+      await newUser.save();
+    }
     res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
-
   }
 });
 
@@ -88,8 +108,13 @@ app.get('/api/quickplay/start', async (req, res) => {
 });
 
 //Authentication Route
-app.get('/api/auth-status', (req, res) => {
-  res.json({ isAuthenticated: req.oidc.isAuthenticated() });
+app.get('/api/auth-status', async (req, res) => {
+  if(req.oidc.isAuthenticated()){
+    const user = await UserInfo.findOne({ userId: req.oidc.user.sub });
+    res.json(user);
+  }else{
+    res.redirect("/")
+  }
 });
 
 //HEAD TO HEAD Question Generator Route

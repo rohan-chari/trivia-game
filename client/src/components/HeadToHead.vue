@@ -49,7 +49,9 @@ export default {
 
         const countdownTimerRef = ref(null);
 
-        const answerSelected = ref(false)
+        const answerSelected = ref(false);
+
+        const userInfo = ref(null);
 
         const callResetTimer = () => {
             if (countdownTimerRef.value) {
@@ -80,16 +82,6 @@ export default {
             if (answer == currentQuestion.value.answer) {
                 console.log('you got the answer correct!')
             }
-            // Move to next question
-            /*if (currentQuestionIndex.value < allTriviaQuestions.value.length - 1) {
-                callResetTimer();
-                currentQuestionIndex.value++;
-                currentQuestion.value = allTriviaQuestions.value[currentQuestionIndex.value];
-                answerSelected.value = false;
-            } else {
-                // Logic for when all questions have been answered
-                alert("All Questions Answered")
-            }*/
         };
 
         const nextQuestionTimeExpiry = () => {
@@ -106,7 +98,18 @@ export default {
 
         onMounted(async () => {
             await fetchTriviaQuestion();
-            console.log('wtf', countdownTimerRef.value)
+            //make sure user is authenticated
+            try {
+                //redirect if not authenticated
+                const response = await axios.get('/api/auth-status');
+                if(!response.data.userId){
+                    window.location.href = `/`;
+                }else{
+                    userInfo.value = response.data
+                }
+            } catch (error) {
+                console.error('Error fetching user information:', error);
+            }
         });
 
         const getButtonColors = (answer) => {
@@ -130,7 +133,8 @@ export default {
             nextQuestionTimeExpiry,
             countdownTimerRef,
             getButtonColors,
-            answerSelected
+            answerSelected,
+            userInfo
         };
     }
 };
