@@ -1,17 +1,25 @@
 <template>
 <div>
     <h1>QuickPlay.vue</h1>
-    <CountdownTimer ref="countdownTimerRef" @timer-expire="nextQuestionTimeExpiry" />
+    <v-row>
+        <v-col cols="12" md="8">
+            <CountdownTimer ref="countdownTimerRef" @score-to-add="addScoreToTotal" @timer-expire="nextQuestionTimeExpiry" />
+        </v-col>
+        <v-col cols="12" md="4">
+            <p class="text-h3">Current Score</p>
+            <p class="text-h5">{{ totalScore }}</p>
+        </v-col>
+    </v-row>
     <div v-if="allTriviaQuestions && allTriviaQuestions.length > 0">
         <p class="text-h3">{{ currentQuestion.question }}</p>
         <v-row justify="center">
             <v-col cols="12" lg="3" md="3" xl="3" sm="12" v-for="(answer, index) in currentQuestion.choices.slice(0, 2)" :key="index">
-                <v-btn :color="getButtonColors(answer)" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
+                <v-btn :disabled="questionAnsweredDisabled" :color="getButtonColors(answer)" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
             </v-col>
         </v-row>
         <v-row justify="center">
             <v-col cols="12" lg="3" md="3" xl="3" sm="12" v-for="(answer, index) in currentQuestion.choices.slice(2, 4)" :key="index + 2">
-                <v-btn :color="getButtonColors(answer)" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
+                <v-btn :disabled="questionAnsweredDisabled" :color="getButtonColors(answer)" block @click="selectAnswer(answer)">{{ answer }}</v-btn>
             </v-col>
         </v-row>
     </div>
@@ -22,9 +30,14 @@
 </template>
 
 <script>
-import {onMounted,ref} from 'vue';
+import {
+    onMounted,
+    ref
+} from 'vue';
 import axios from 'axios';
-import {useRoute} from 'vue-router';
+import {
+    useRoute
+} from 'vue-router';
 import CountdownTimer from './CountdownTimer.vue';
 
 export default {
@@ -38,6 +51,10 @@ export default {
         const allTriviaQuestions = ref([]);
         const currentQuestionIndex = ref(0);
 
+        const questionAnsweredDisabled = ref(false);
+
+        const totalScore = ref(0);
+
         const userInfo = ref(null);
 
         const currentQuestion = ref({});
@@ -46,12 +63,22 @@ export default {
 
         const answerSelected = ref(false);
 
-
         const callResetTimer = () => {
             if (countdownTimerRef.value) {
                 countdownTimerRef.value.resetTimer();
             }
         };
+
+        const getAvailableScore = () => {
+            if (countdownTimerRef.value) {
+                countdownTimerRef.value.getAvailableScore();
+            }
+        }
+
+        const addScoreToTotal = (score) => {
+            console.log('emitted score', score)
+            totalScore.value += score;
+        }
 
         const fetchTriviaQuestion = async () => {
             try {
@@ -70,9 +97,10 @@ export default {
         const selectAnswer = (answer) => {
             // Logic to check if the answer is correct
             answerSelected.value = true;
-
+            questionAnsweredDisabled.value = true;
             if (answer == currentQuestion.value.answer) {
                 console.log('you got the answer correct!')
+                console.log('available score!', getAvailableScore());
             }
         };
 
@@ -82,6 +110,7 @@ export default {
                 currentQuestionIndex.value++;
                 currentQuestion.value = allTriviaQuestions.value[currentQuestionIndex.value];
                 answerSelected.value = false;
+                questionAnsweredDisabled.value = false;
             } else {
                 // Logic for when all questions have been answered
                 alert("All Questions Answered")
@@ -89,13 +118,13 @@ export default {
         };
 
         const getButtonColors = (answer) => {
-            if(answerSelected.value == false){
+            if (answerSelected.value == false) {
                 return 'proceed'
             }
             if (answer === currentQuestion.value.answer && answerSelected.value == true) {
                 // Correct answer
                 return 'green';
-            }else{
+            } else {
                 return 'red'
             }
         }
@@ -106,9 +135,9 @@ export default {
             try {
                 //redirect if not authenticated
                 const response = await axios.get('/api/auth-status');
-                if(!response.data.userId){
+                if (!response.data.userId) {
                     window.location.href = `/`;
-                }else{
+                } else {
                     userInfo.value = response.data
                 }
             } catch (error) {
@@ -125,7 +154,10 @@ export default {
             countdownTimerRef,
             CountdownTimer,
             nextQuestionTimeExpiry,
-            getButtonColors
+            getButtonColors,
+            addScoreToTotal,
+            totalScore,
+            questionAnsweredDisabled
         };
     }
 };
@@ -133,13 +165,19 @@ export default {
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
-.text-h3{
-    font-family: "Rubik",sans-serif;
+
+.text-h3 {
+    font-family: "Rubik", sans-serif;
     font-weight: 600;
     margin-bottom: 20px;
 }
-.answer-choices{
-    margin-left:auto;
+
+.answer-choices {
+    margin-left: auto;
     margin-right: auto;
+}
+
+.text-h5 {
+    font-family: "Rubik", sans-serif;
 }
 </style>
