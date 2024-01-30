@@ -118,7 +118,7 @@ export default {
             try {
                 const response = await axios.get('/api/leaderboard/quickplay/scores');
                 quickPlayElemSchoolLeaderboard.value = response.data.elementarySchool
-                quickPlayHighSchoolLeaderboard.value = response.data.quickPlayHighSchoolLeaderboard
+                quickPlayHighSchoolLeaderboard.value = response.data.highSchool
                 quickPlayCollegeLeaderboard.value = response.data.college
                 quickPlayGeniusLeaderboard.value = response.data.genius
             } catch (error) {
