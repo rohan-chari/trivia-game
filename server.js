@@ -33,6 +33,15 @@ const userInfoSchema = new Schema({
 });
 const UserInfo = mongoose.model('UserInfo', userInfoSchema);
 
+const quickPlayLeaderBoardSchema = new Schema({
+  userId: String,
+  userName: String,
+  score: String,
+  difficulty: String,
+  mode: String
+});
+const quickPlayLeader = mongoose.model('QuickPlayLeader', quickPlayLeaderBoardSchema);
+
 
 //bodyparser to read post requests
 app.use( bodyParser.json());       // to support JSON-encoded bodies
@@ -114,6 +123,61 @@ app.get('/api/auth-status', async (req, res) => {
     res.json(user);
   }else{
     res.redirect("/")
+  }
+});
+
+//Quickplay leaderboard POST
+app.post('/api/leaderboard/quickplay/scores', async (req, res) => {
+  let difficultyReq = req.body.difficulty;
+  let userIdReq = req.body.userId;
+  let userNameReq = req.body.userName;
+  let scoreReq = req.body.score;
+  let modeReq = req.body.mode;
+
+  try {
+    const existingQuickPlayLeader = await quickPlayLeader.findOne({ userId: userIdReq, difficulty: difficultyReq, mode:modeReq });
+
+    if (existingQuickPlayLeader) {
+      // Update the existing record with the new score
+      existingQuickPlayLeader.score = scoreReq;
+      await existingQuickPlayLeader.save();
+      res.status(200).json({ message: 'Score updated successfully', data: existingQuickPlayLeader });
+    } else {
+      // Create a new record and save it to the database
+      const newQuickPlayLeader = new quickPlayLeader({
+        userId: userIdReq,
+        userName: userNameReq,
+        difficulty: difficultyReq,
+        score: scoreReq,
+        mode:modeReq
+      });
+      await newQuickPlayLeader.save();
+      res.status(201).json({ message: 'New score added successfully', data: newQuickPlayLeader });
+    }
+  } catch (error) {
+    // Handle any errors that occur during the process
+    console.log(error);
+    res.status(500).json({ message: 'An error occurred', error: error });
+  }
+});
+
+app.get('/api/leaderboard/quickplay/scores', async (req, res) => {
+  try {
+    const results = await Promise.all([
+      quickPlayLeader.find({ difficulty: "Elementary School" }),
+      quickPlayLeader.find({ difficulty: "High School" }),
+      quickPlayLeader.find({ difficulty: "College" }),
+      quickPlayLeader.find({ difficulty: "Genius" })
+    ]);
+
+    res.json({
+      elementarySchool: results[0],
+      highSchool: results[1],
+      college: results[2],
+      genius: results[3]
+    });
+  } catch (error) {
+    res.status(500).send("Error retrieving leaderboards");
   }
 });
 

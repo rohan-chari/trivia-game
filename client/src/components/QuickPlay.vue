@@ -104,7 +104,7 @@ export default {
             }
         };
 
-        const nextQuestionTimeExpiry = () => {
+        const nextQuestionTimeExpiry = async () => {
             if (currentQuestionIndex.value < allTriviaQuestions.value.length - 1) {
                 callResetTimer();
                 currentQuestionIndex.value++;
@@ -113,7 +113,19 @@ export default {
                 questionAnsweredDisabled.value = false;
             } else {
                 // Logic for when all questions have been answered
-                alert("All Questions Answered")
+                try {
+                    await axios.post('/api/leaderboard/quickplay/scores', {
+                        userId: userInfo.value.userId,
+                        score: totalScore.value,
+                        userName: userInfo.value.name,
+                        difficulty: difficulty.value,
+                        mode: 'quickplay'
+                    });
+                    window.location.href = `/TriviaHome`;
+
+                } catch (error) {
+                    console.error('Error fetching trivia question:', error);
+                }
             }
         };
 

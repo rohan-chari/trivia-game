@@ -1,45 +1,53 @@
 <template>
 <div>
     <h1>Welcome, {{ userInfo.name }}</h1>
-    <v-col class="game-select" cols="12" lg="3" md="3" xl="3" sm="12">
-        <v-dialog transition="dialog-top-transition" width="auto">
-            <template v-slot:activator="{ props }">
-                <v-btn color="proceed" v-bind="props">Quick Play</v-btn>
-            </template>
-            <template v-slot:default="{ isActive }">
-                <v-card width="500">
-                    <v-toolbar color="primary" title="Quick Play Settings"></v-toolbar>
-                    <v-card-text>
-                        <v-select label="Choose your difficulty" :items="['Elementary School', 'High School', 'College', 'Genius']" v-model="selectedDifficulty">
-                        </v-select>
-                    </v-card-text>
-                    <v-card-actions class="justify-end">
-                        <v-btn variant="text" @click="isActive.value = false, selectedDifficulty = ''">Cancel</v-btn>
-                        <v-btn variant="text" :disabled="!selectedDifficulty" @click="startQuickPlay">Start Game</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </template>
-        </v-dialog>
-        <v-dialog transition="dialog-top-transition" width="auto">
-            <template v-slot:activator="{ props }">
-                <v-btn color="success" v-bind="props">Head To Head</v-btn>
-            </template>
-            <template v-slot:default="{ isActive }">
-                <v-card color="light" width="500">
-                    <v-toolbar color="primary" title="Head To Head Settings"></v-toolbar>
-                    <v-card-text>
-                        <v-select label="Choose your difficulty" :items="['Elementary School', 'High School', 'College', 'Genius']" v-model="selectedDifficulty">
-                        </v-select>
-                        <v-combobox  creatable="true" v-model="selectedSubject" label="Choose your subject" :items="subjectDropdown"></v-combobox>
-                    </v-card-text>
-                    <v-card-actions class="justify-end">
-                        <v-btn variant="text" @click="isActive.value = false, selectedDifficulty = '', selectedSubject=''">Cancel</v-btn>
-                        <v-btn variant="text" :disabled="!selectedDifficulty || !selectedSubject" @click="startHeadToHead">Start Game</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </template>
-        </v-dialog>
-    </v-col>
+    <v-row>
+        <v-col cols="12" lg="4" md="4" xl="4" sm="12">
+            <LeaderBoard :leaderboardData="quickPlayElemSchoolLeaderboard" :title="'Quickplay Leaderboard - Elementary School'"></LeaderBoard>
+        </v-col>
+        <v-col class="game-select" cols="12" lg="4" md="4" xl="4" sm="12">
+            <v-dialog transition="dialog-top-transition" width="auto">
+                <template v-slot:activator="{ props }">
+                    <v-btn color="proceed" v-bind="props">Quick Play</v-btn>
+                </template>
+                <template v-slot:default="{ isActive }">
+                    <v-card width="500">
+                        <v-toolbar color="primary" title="Quick Play Settings"></v-toolbar>
+                        <v-card-text>
+                            <v-select label="Choose your difficulty" :items="['Elementary School', 'High School', 'College', 'Genius']" v-model="selectedDifficulty">
+                            </v-select>
+                        </v-card-text>
+                        <v-card-actions class="justify-end">
+                            <v-btn variant="text" @click="isActive.value = false, selectedDifficulty = ''">Cancel</v-btn>
+                            <v-btn variant="text" :disabled="!selectedDifficulty" @click="startQuickPlay">Start Game</v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </template>
+            </v-dialog>
+            <v-dialog transition="dialog-top-transition" width="auto">
+                <template v-slot:activator="{ props }">
+                    <v-btn color="success" v-bind="props">Head To Head</v-btn>
+                </template>
+                <template v-slot:default="{ isActive }">
+                    <v-card color="light" width="500">
+                        <v-toolbar color="primary" title="Head To Head Settings"></v-toolbar>
+                        <v-card-text>
+                            <v-select label="Choose your difficulty" :items="['Elementary School', 'High School', 'College', 'Genius']" v-model="selectedDifficulty">
+                            </v-select>
+                            <v-combobox creatable="true" v-model="selectedSubject" label="Choose your subject" :items="subjectDropdown"></v-combobox>
+                        </v-card-text>
+                        <v-card-actions class="justify-end">
+                            <v-btn variant="text" @click="isActive.value = false, selectedDifficulty = '', selectedSubject=''">Cancel</v-btn>
+                            <v-btn variant="text" :disabled="!selectedDifficulty || !selectedSubject" @click="startHeadToHead">Start Game</v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </template>
+            </v-dialog>
+        </v-col>
+        <v-col cols="12" lg="4" md="4" xl="4" sm="12">
+            <LeaderBoard :leaderboardData="quickPlayHighSchoolLeaderboard" :title="'Quickplay Leaderboard - High School'"></LeaderBoard>
+        </v-col>
+    </v-row>
 </div>
 </template>
 
@@ -48,12 +56,22 @@ import {
     onMounted,
     ref
 } from 'vue';
+import LeaderBoard from './LeaderBoard.vue';
 import axios from 'axios';
 export default {
     name: 'TriviaHome',
+    components:{
+        LeaderBoard
+    },
     setup() {
         const selectedDifficulty = ref('');
         const selectedSubject = ref('')
+
+        //leaderboards
+        const quickPlayElemSchoolLeaderboard = ref([]);
+        const quickPlayHighSchoolLeaderboard = ref([]);
+        const quickPlayCollegeLeaderboard = ref([]);
+        const quickPlayGeniusLeaderboard = ref([]);
 
         const userInfo = ref(null);
 
@@ -96,16 +114,28 @@ export default {
             }
         };
 
-        onMounted(async () => {
-            subjectDropdown.value = await getHeadToHeadSubjects();
+        const getLeaderboards = async () => {
+            try {
+                const response = await axios.get('/api/leaderboard/quickplay/scores');
+                quickPlayElemSchoolLeaderboard.value = response.data.elementarySchool
+                quickPlayHighSchoolLeaderboard.value = response.data.quickPlayHighSchoolLeaderboard
+                quickPlayCollegeLeaderboard.value = response.data.college
+                quickPlayGeniusLeaderboard.value = response.data.genius
+            } catch (error) {
+                console.error('Error fetching subject dropdown:', error);
+            }
+        };
 
+        onMounted(async () => {
             try {
                 //redirect if not authenticated
                 const response = await axios.get('/api/auth-status');
-                if(!response.data.userId){
+                if (!response.data.userId) {
                     window.location.href = `/`;
-                }else{
-                    userInfo.value = response.data
+                } else {
+                    subjectDropdown.value = await getHeadToHeadSubjects();
+                    userInfo.value = response.data;
+                    getLeaderboards();
                 }
             } catch (error) {
                 console.error('Error fetching user information:', error);
@@ -118,7 +148,11 @@ export default {
             startQuickPlay,
             startHeadToHead,
             subjectDropdown,
-            userInfo
+            userInfo,
+            quickPlayElemSchoolLeaderboard,
+            quickPlayHighSchoolLeaderboard,
+            quickPlayCollegeLeaderboard,
+            quickPlayGeniusLeaderboard
         };
     }
 };
@@ -128,9 +162,7 @@ export default {
 .game-select {
     display: flex;
     flex-direction: column;
-    margin-left: auto;
-    margin-right: auto;
-    height: 200px;
     justify-content: space-evenly;
+    height:400px;
 }
 </style>
