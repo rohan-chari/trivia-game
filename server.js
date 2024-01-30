@@ -164,10 +164,10 @@ app.post('/api/leaderboard/quickplay/scores', async (req, res) => {
 app.get('/api/leaderboard/quickplay/scores', async (req, res) => {
   try {
     const results = await Promise.all([
-      quickPlayLeader.find({ difficulty: "Elementary School" }),
-      quickPlayLeader.find({ difficulty: "High School" }),
-      quickPlayLeader.find({ difficulty: "College" }),
-      quickPlayLeader.find({ difficulty: "Genius" })
+      quickPlayLeader.find({ difficulty: "Elementary School" }).sort({ score: -1 }),
+      quickPlayLeader.find({ difficulty: "High School" }).sort({ score: -1 }),
+      quickPlayLeader.find({ difficulty: "College" }).sort({ score: -1 }),
+      quickPlayLeader.find({ difficulty: "Genius" }).sort({ score: -1 })
     ]);
 
     res.json({

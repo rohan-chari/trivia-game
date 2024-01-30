@@ -3,7 +3,7 @@
     <h1>Welcome, {{ userInfo.name }}</h1>
     <v-row>
         <v-col cols="12" lg="4" md="4" xl="4" sm="12">
-            <LeaderBoard :leaderboardData="quickPlayElemSchoolLeaderboard" :title="'Quickplay Leaderboard - Elementary School'"></LeaderBoard>
+            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayElemSchoolLeaderboard" :title="'Quickplay Leaderboard - Elementary School'"></LeaderBoard>
         </v-col>
         <v-col class="game-select" cols="12" lg="4" md="4" xl="4" sm="12">
             <v-dialog transition="dialog-top-transition" width="auto">
@@ -45,7 +45,7 @@
             </v-dialog>
         </v-col>
         <v-col cols="12" lg="4" md="4" xl="4" sm="12">
-            <LeaderBoard :leaderboardData="quickPlayHighSchoolLeaderboard" :title="'Quickplay Leaderboard - High School'"></LeaderBoard>
+            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayHighSchoolLeaderboard" :title="'Quickplay Leaderboard - High School'"></LeaderBoard>
         </v-col>
     </v-row>
 </div>
@@ -135,6 +135,7 @@ export default {
                 } else {
                     subjectDropdown.value = await getHeadToHeadSubjects();
                     userInfo.value = response.data;
+                    console.log('LOOK FOR ME',userInfo.value.userId);
                     getLeaderboards();
                 }
             } catch (error) {
