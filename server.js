@@ -164,12 +164,28 @@ app.post('/api/leaderboard/quickplay/scores', async (req, res) => {
 app.get('/api/leaderboard/quickplay/scores', async (req, res) => {
   try {
     const results = await Promise.all([
-      quickPlayLeader.find({ difficulty: "Elementary School" }).sort({ score: -1 }),
-      quickPlayLeader.find({ difficulty: "High School" }).sort({ score: -1 }),
-      quickPlayLeader.find({ difficulty: "College" }).sort({ score: -1 }),
-      quickPlayLeader.find({ difficulty: "Genius" }).sort({ score: -1 })
+      quickPlayLeader.aggregate([
+        { $match: { difficulty: "Elementary School" }},
+        { $addFields: { convertedScore: { $toInt: "$score" } } },
+        { $sort: { convertedScore: -1 } }
+      ]),
+      quickPlayLeader.aggregate([
+        { $match: { difficulty: "High School" }},
+        { $addFields: { convertedScore: { $toInt: "$score" } } },
+        { $sort: { convertedScore: -1 } }
+      ]),
+      quickPlayLeader.aggregate([
+        { $match: { difficulty: "College" }},
+        { $addFields: { convertedScore: { $toInt: "$score" } } },
+        { $sort: { convertedScore: -1 } }
+      ]),
+      quickPlayLeader.aggregate([
+        { $match: { difficulty: "Genius" }},
+        { $addFields: { convertedScore: { $toInt: "$score" } } },
+        { $sort: { convertedScore: -1 } }
+      ])
     ]);
-
+    console.log(results[0])
     res.json({
       elementarySchool: results[0],
       highSchool: results[1],
@@ -180,6 +196,8 @@ app.get('/api/leaderboard/quickplay/scores', async (req, res) => {
     res.status(500).send("Error retrieving leaderboards");
   }
 });
+
+
 
 //HEAD TO HEAD Question Generator Route
 app.post('/api/HeadToHead/start', async (req, res) => {
