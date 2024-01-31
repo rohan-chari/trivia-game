@@ -53,7 +53,7 @@ export default {
             timer = setInterval(() => {
                 if (timeLeft.value > 0) {
                     timeLeft.value--;
-                    if(timeLeft.value < totalTime * .7){
+                    if(timeLeft.value < totalTime * .8){
                         if(timeLeft.value % 2 == 0){
                             pointsLeft.value-=200;
                         }
