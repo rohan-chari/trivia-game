@@ -207,7 +207,7 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     let prompt = generatePrompt(difficulty, subject);
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt + "If there is any excess text in the data, can you clean it out so that i will be able to use the JSON.parse javascript function on it" }],
-      model: "gpt-4-0125-preview"
+      model: "gpt-4"
     });
 
     let questionsArray = JSON.parse(completion.choices[0].message.content);
