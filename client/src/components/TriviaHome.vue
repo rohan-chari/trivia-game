@@ -1,17 +1,14 @@
 <template>
 <div>
-    <h1>Welcome, {{ userInfo.name }}</h1>
+    <p class="text-h4">Welcome, {{ userInfo.name }}</p>
     <v-row>
-        <v-col cols="12" lg="4" md="4" xl="4" sm="12">
-            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayElemSchoolLeaderboard" :title="'Quickplay Leaderboard - Elementary School'"></LeaderBoard>
-        </v-col>
-        <v-col class="game-select" cols="12" lg="4" md="4" xl="4" sm="12">
-            <v-dialog transition="dialog-top-transition" width="auto">
+        <v-col class="game-select" cols="12" lg="3" md="3" xl="3" sm="12">
+            <v-dialog transition="dialog-top-transition">
                 <template v-slot:activator="{ props }">
-                    <v-btn color="proceed" v-bind="props">Quick Play</v-btn>
+                    <v-btn width="400" color="proceed" v-bind="props">Quick Play</v-btn>
                 </template>
                 <template v-slot:default="{ isActive }">
-                    <v-card width="500">
+                    <v-card width="500" style="margin-left:auto; margin-right: auto;">
                         <v-toolbar color="primary" title="Quick Play Settings"></v-toolbar>
                         <v-card-text>
                             <v-select label="Choose your difficulty" :items="['Elementary School', 'High School', 'College', 'Genius']" v-model="selectedDifficulty">
@@ -24,12 +21,16 @@
                     </v-card>
                 </template>
             </v-dialog>
-            <v-dialog transition="dialog-top-transition" width="auto">
+        </v-col>
+    </v-row>
+    <v-row>
+        <v-col class="game-select" cols="12" lg="3" md="3" xl="3" sm="12">
+            <v-dialog transition="dialog-top-transition">
                 <template v-slot:activator="{ props }">
-                    <v-btn color="success" v-bind="props">Head To Head</v-btn>
+                    <v-btn width="400" color="success" v-bind="props">Head To Head</v-btn>
                 </template>
                 <template v-slot:default="{ isActive }">
-                    <v-card color="light" width="500">
+                    <v-card width="500" style="margin-left:auto; margin-right: auto;">
                         <v-toolbar color="primary" title="Head To Head Settings"></v-toolbar>
                         <v-card-text>
                             <v-select label="Choose your difficulty" :items="['Elementary School', 'High School', 'College', 'Genius']" v-model="selectedDifficulty">
@@ -44,8 +45,23 @@
                 </template>
             </v-dialog>
         </v-col>
-        <v-col cols="12" lg="4" md="4" xl="4" sm="12">
-            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayHighSchoolLeaderboard" :title="'Quickplay Leaderboard - High School'"></LeaderBoard>
+    </v-row>
+
+    <v-row class="leaderboard-header text-h2">
+        <h1>QuickPlay Leaderboards</h1>
+    </v-row>
+    <v-row>
+        <v-col cols="12" lg="3" md="3" xl="3" sm="12">
+            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayElemSchoolLeaderboard" :title="'Elementary School'"></LeaderBoard>
+        </v-col>
+        <v-col cols="12" lg="3" md="3" xl="3" sm="12">
+            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayHighSchoolLeaderboard" :title="'High School'"></LeaderBoard>
+        </v-col>
+        <v-col cols="12" lg="3" md="3" xl="3" sm="12">
+            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayCollegeLeaderboard" :title="'College'"></LeaderBoard>
+        </v-col>
+        <v-col cols="12" lg="3" md="3" xl="3" sm="12">
+            <LeaderBoard :currentUserData="userInfo" :leaderboardData="quickPlayGeniusLeaderboard" :title="'Genius'"></LeaderBoard>
         </v-col>
     </v-row>
 </div>
@@ -60,7 +76,7 @@ import LeaderBoard from './LeaderBoard.vue';
 import axios from 'axios';
 export default {
     name: 'TriviaHome',
-    components:{
+    components: {
         LeaderBoard
     },
     setup() {
@@ -135,7 +151,7 @@ export default {
                 } else {
                     subjectDropdown.value = await getHeadToHeadSubjects();
                     userInfo.value = response.data;
-                    console.log('LOOK FOR ME',userInfo.value.userId);
+                    console.log('LOOK FOR ME', userInfo.value.userId);
                     getLeaderboards();
                 }
             } catch (error) {
@@ -160,10 +176,37 @@ export default {
 </script>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
+
+.text-h4 {
+    margin-top: 10px;
+    font-family: "Rubik", sans-serif;
+    font-size: 4rem !important;
+    margin-bottom:20px;
+}
+
 .game-select {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
-    height:400px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+    align-items: center;
+}
+
+.leaderboard-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Rubik", sans-serif;
+    font-size: 2rem !important;
+    width: 100%;
+}
+
+.v-btn {
+    font-size: large;
+    border-radius: 20px;
+    font-family: "Rubik", sans-serif;
 }
 </style>
