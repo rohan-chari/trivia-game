@@ -224,7 +224,7 @@ app.post('/api/HeadToHead/start', async (req, res) => {
           difficulty: difficulty
         };
   
-        const existingQuestion = await TriviaQuestion.exists({ subject: questionObject.subject, answer: questionObject.answer });
+        const existingQuestion = await TriviaQuestion.find({ subject: questionObject.subject, answer: questionObject.answer });
   
         if (!existingQuestion) {
           const newQuestion = new TriviaQuestion(questionObject);
