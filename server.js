@@ -206,52 +206,47 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     let subject = req.body.subject;
     let prompt = generatePrompt(difficulty, subject);
     const completion = await openai.chat.completions.create({
-      messages: [{ role: "system", content: prompt + "If there is any excess text in the data, can you clean it out so that i will be able to use the JSON.parse javascript function on it" }],
+      messages: [{ role: "system", content: prompt + "If there is any excess text in the data, can you clean it out so that I will be able to use the JSON.parse JavaScript function on it" }],
       model: "gpt-4"
     });
 
     let questionsArray = JSON.parse(completion.choices[0].message.content);
-    let savedQuestions = [];
+    let saveQuestionPromises = [];
 
     if (Array.isArray(questionsArray) && questionsArray.length > 0) {
-      // Extract subjects and answers for use in querying existing questions
-      let searchCriteria = questionsArray.map(q => ({
-        subject: q.subject || subject,
-        answer: q.answer
-      }));
-
-      // Fetch existing questions in bulk
+      // Pre-fetch existing questions in bulk to avoid checking inside the loop
+      const criteria = questionsArray.map(q => ({ subject: q.subject || subject, answer: q.answer }));
       const existingQuestions = await TriviaQuestion.find({
-        $or: searchCriteria.map(criteria => ({
-          subject: criteria.subject,
-          answer: criteria.answer
+        $or: criteria.map(c => ({
+          subject: c.subject,
+          answer: c.answer
         }))
       }).select('subject answer');
-
-      // Convert to a format that allows easy existence checking
-      let existingMap = {};
-      existingQuestions.forEach(q => {
-        existingMap[`${q.subject}_${q.answer}`] = true;
-      });
+      let existingMap = existingQuestions.reduce((acc, q) => {
+        acc[`${q.subject}_${q.answer}`] = true;
+        return acc;
+      }, {});
 
       for (const questionData of questionsArray) {
-        let questionObject = {
-          question: questionData.question,
-          choices: questionData.choices,
-          answer: questionData.answer,
-          subject: questionData.subject || subject,
-          difficulty: difficulty
-        };
-
-        if (!existingMap[`${questionObject.subject}_${questionObject.answer}`]) {
-          const newQuestion = new TriviaQuestion(questionObject);
-          await newQuestion.save();
-          savedQuestions.push(newQuestion);
+        const key = `${questionData.subject || subject}_${questionData.answer}`;
+        if (!existingMap[key]) {
+          let questionObject = new TriviaQuestion({
+            question: questionData.question,
+            choices: questionData.choices,
+            answer: questionData.answer,
+            subject: questionData.subject || subject,
+            difficulty: difficulty
+          });
+          // Instead of saving immediately, push the save promise to an array
+          saveQuestionPromises.push(questionObject.save());
         }
       }
+
+      // Use Promise.all to wait for all save operations to complete
+      let savedQuestions = await Promise.all(saveQuestionPromises);
       res.json(savedQuestions);
     } else {
-      res.status(500).json({error: "Error parsing JSON"});
+      res.status(500).json({ error: "Error parsing JSON" });
     }
   } catch (error) {
     console.log(error);
