@@ -211,25 +211,17 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     });
 
     let questionsArray = JSON.parse(completion.choices[0].message.content);
-    let saveQuestionPromises = [];
+    let savedQuestions = [];
 
+    // Fetch all questions from the database before the loop
+    const allQuestions = await TriviaQuestion.find({}).lean(); // Using .lean() for performance if you only need plain JavaScript objects
+    const questionMap = new Map(allQuestions.map(q => [`${q.subject}_${q.answer}`, q]));
+
+    console.log('QUESTIONSARRAY', questionsArray)
     if (Array.isArray(questionsArray) && questionsArray.length > 0) {
-      // Pre-fetch existing questions in bulk to avoid checking inside the loop
-      const criteria = questionsArray.map(q => ({ subject: q.subject || subject, answer: q.answer }));
-      const existingQuestions = await TriviaQuestion.find({
-        $or: criteria.map(c => ({
-          subject: c.subject,
-          answer: c.answer
-        }))
-      }).select('subject answer');
-      let existingMap = existingQuestions.reduce((acc, q) => {
-        acc[`${q.subject}_${q.answer}`] = true;
-        return acc;
-      }, {});
-
       for (const questionData of questionsArray) {
-        const key = `${questionData.subject || subject}_${questionData.answer}`;
-        if (!existingMap[key]) {
+        // Check in-memory if the question already exists
+        if (!questionMap.has(`${questionData.subject || subject}_${questionData.answer}`)) {
           let questionObject = new TriviaQuestion({
             question: questionData.question,
             choices: questionData.choices,
@@ -237,16 +229,17 @@ app.post('/api/HeadToHead/start', async (req, res) => {
             subject: questionData.subject || subject,
             difficulty: difficulty
           });
-          // Instead of saving immediately, push the save promise to an array
-          saveQuestionPromises.push(questionObject.save());
+
+          await questionObject.save();
+          savedQuestions.push(questionObject);
+
+          // Optionally, update the in-memory map to reflect the addition
+          questionMap.set(`${questionData.subject || subject}_${questionData.answer}`, questionObject);
         }
       }
-
-      // Use Promise.all to wait for all save operations to complete
-      let savedQuestions = await Promise.all(saveQuestionPromises);
       res.json(savedQuestions);
     } else {
-      res.status(500).json({ error: "Error parsing JSON" });
+      res.status(500).json({error: "Error parsing JSON"});
     }
   } catch (error) {
     console.log(error);
