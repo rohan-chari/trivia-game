@@ -213,8 +213,27 @@ app.post('/api/HeadToHead/start', async (req, res) => {
     let questionsArray = JSON.parse(completion.choices[0].message.content);
     let savedQuestions = [];
 
-    console.log('QUESTIONSARRAY',questionsArray)
     if (Array.isArray(questionsArray) && questionsArray.length > 0) {
+      // Extract subjects and answers for use in querying existing questions
+      let searchCriteria = questionsArray.map(q => ({
+        subject: q.subject || subject,
+        answer: q.answer
+      }));
+
+      // Fetch existing questions in bulk
+      const existingQuestions = await TriviaQuestion.find({
+        $or: searchCriteria.map(criteria => ({
+          subject: criteria.subject,
+          answer: criteria.answer
+        }))
+      }).select('subject answer');
+
+      // Convert to a format that allows easy existence checking
+      let existingMap = {};
+      existingQuestions.forEach(q => {
+        existingMap[`${q.subject}_${q.answer}`] = true;
+      });
+
       for (const questionData of questionsArray) {
         let questionObject = {
           question: questionData.question,
@@ -223,24 +242,23 @@ app.post('/api/HeadToHead/start', async (req, res) => {
           subject: questionData.subject || subject,
           difficulty: difficulty
         };
-  
-        const existingQuestion = await TriviaQuestion.find({ subject: questionObject.subject, answer: questionObject.answer });
-  
-        if (!existingQuestion) {
+
+        if (!existingMap[`${questionObject.subject}_${questionObject.answer}`]) {
           const newQuestion = new TriviaQuestion(questionObject);
           await newQuestion.save();
           savedQuestions.push(newQuestion);
         }
       }
       res.json(savedQuestions);
-    }else{
-      res.status(500).json({error: "error parsing json"})
+    } else {
+      res.status(500).json({error: "Error parsing JSON"});
     }
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ error: "error" });
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 //GET for Head To Head if Subject already exists
 app.get('/api/HeadToHead/start', async (req, res) => {
